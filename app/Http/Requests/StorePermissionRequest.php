@@ -22,7 +22,23 @@ class StorePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255|unique:permissions,name',
+            // 'guard_name' => 'nullable|string|max:255', // Optionnel, Spatie utilise 'web' par défaut
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Le nom de la permission est obligatoire.',
+            'name.string' => 'Le nom de la permission doit être une chaîne de caractères.',
+            'name.max' => 'Le nom de la permission ne doit pas dépasser 255 caractères.',
+            'name.unique' => 'Ce nom de permission existe déjà.',
         ];
     }
 }

@@ -31,4 +31,28 @@ class StoreArticleRequest extends FormRequest
             'emplacement_id' => 'nullable|exists:emplacements,id',
         ];
     }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => "Le nom de l'article est obligatoire.",
+            'name.string' => "Le nom de l'article doit être une chaîne de caractères.",
+            'name.max' => "Le nom de l'article ne doit pas dépasser 255 caractères.",
+            'description.string' => "La description de l'article doit être une chaîne de caractères.",
+            'prix.required' => "Le prix de l'article est obligatoire.",
+            'prix.numeric' => "Le prix de l'article doit être un nombre.",
+            'prix.min' => "Le prix de l'article ne peut pas être négatif.",
+            'quantite.required' => "La quantité de l'article est obligatoire.",
+            'quantite.integer' => "La quantité de l'article doit être un nombre entier.",
+            'quantite.min' => "La quantité de l'article ne peut pas être négative.",
+            'category_id.exists' => "La catégorie sélectionnée n'est pas valide.",
+            'fournisseur_id.exists' => "Le fournisseur sélectionné n'est pas valide.",
+            'emplacement_id.exists' => "L'emplacement sélectionné n'est pas valide.",
+        ];
+    }
 }

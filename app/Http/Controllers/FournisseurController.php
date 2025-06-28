@@ -5,21 +5,27 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFournisseurRequest;
 use App\Http\Requests\UpdateFournisseurRequest;
 use App\Models\Fournisseur;
+use Illuminate\Http\Request; // Ajouté pour la méthode index
 
 class FournisseurController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Affiche une liste des ressources.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('fournisseurs.index', [
-            'fournisseurs' => Fournisseur::all(),
-        ]);
+        // TODO: Ajouter la recherche et le filtrage ici
+        $fournisseurs = Fournisseur::latest()->paginate(10); // Pagination ajoutée
+        return view('fournisseurs.index', compact('fournisseurs'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Affiche le formulaire de création d'une nouvelle ressource.
+     *
+     * @return \Illuminate\View\View
      */
     public function create()
     {
@@ -27,91 +33,68 @@ class FournisseurController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Enregistre une nouvelle ressource dans la base de données.
+     *
+     * @param  \App\Http\Requests\StoreFournisseurRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreFournisseurRequest $request)
     {
-        $request->validate(['name' => 'required|unique:categories',
-            'description' => 'nullable|string|max:255', // Validation pour la description
-            'nom_entreprise' => 'required|string|max:255',
-            'adresse' => 'required|string|max:255',
-            'telephone' => 'required|string|max:20',
-            'email' => 'required|email|unique:fournisseurs,email',
-            'ville' => 'required|string|max:255',
-            'pays' => 'required|string|max:255',
-        ]);
-
-        Fournisseur::create(['name' => $request->name,
-            'description' => $request->description,
-            'nom_entreprise' => $request->nom_entreprise,
-            'adresse' => $request->adresse,
-            'telephone' => $request->telephone,
-            'email' => $request->email,
-            'ville' => $request->ville,
-            'pays' => $request->pays,
-        ]);
+        Fournisseur::create($request->validated());
 
         return redirect()->route('fournisseurs.index')
-            ->with('success', 'categorie created successfully.');
+            ->with('success', 'Fournisseur créé avec succès.');
     }
 
     /**
-     * Display the specified resource.
+     * Affiche la ressource spécifiée.
+     *
+     * @param  \App\Models\Fournisseur  $fournisseur
+     * @return \Illuminate\View\View
      */
     public function show(Fournisseur $fournisseur)
     {
-        return view('fournisseurs.show', [
-            'fournisseur' => $fournisseur,
-        ]);
+        return view('fournisseurs.show', compact('fournisseur'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Affiche le formulaire de modification de la ressource spécifiée.
+     *
+     * @param  \App\Models\Fournisseur  $fournisseur
+     * @return \Illuminate\View\View
      */
     public function edit(Fournisseur $fournisseur)
     {
-        return view('fournisseurs.edit', [
-            'fournisseur' => $fournisseur,
-        ]);
+        return view('fournisseurs.edit', compact('fournisseur'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Met à jour la ressource spécifiée dans la base de données.
+     *
+     * @param  \App\Http\Requests\UpdateFournisseurRequest  $request
+     * @param  \App\Models\Fournisseur  $fournisseur
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateFournisseurRequest $request, Fournisseur $fournisseur)
     {
-        $request->validate(['name' => 'required|unique:categories,name,' . $fournisseur->id,
-            'description' => 'nullable|string|max:255', // Validation pour la description
-            'nom_entreprise' => 'required|string|max:255',
-            'adresse' => 'required|string|max:255',
-            'telephone' => 'required|string|max:20',
-            'email' => 'required|email|unique:fournisseurs,email,' . $fournisseur->id,
-            'ville' => 'required|string|max:255',
-            'pays' => 'required|string|max:255',
-        ]);
-
-        $fournisseur->update(['name' => $request->name,
-            'description' => $request->description,
-            'nom_entreprise' => $request->nom_entreprise,
-            'adresse' => $request->adresse,
-            'telephone' => $request->telephone,
-            'email' => $request->email,
-            'ville' => $request->ville,
-            'pays' => $request->pays,
-        ]);
+        $fournisseur->update($request->validated());
 
         return redirect()->route('fournisseurs.index')
-            ->with('success', 'categorie updated successfully.');
+            ->with('success', 'Fournisseur mis à jour avec succès.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Supprime la ressource spécifiée de la base de données.
+     *
+     * @param  \App\Models\Fournisseur  $fournisseur
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Fournisseur $fournisseur)
     {
+        // TODO: Vérifier si le fournisseur est lié à des articles avant suppression
         $fournisseur->delete();
 
         return redirect()->route('fournisseurs.index')
-            ->with('success', 'categorie deleted successfully.');
+            ->with('success', 'Fournisseur supprimé avec succès.');
     }
 }
