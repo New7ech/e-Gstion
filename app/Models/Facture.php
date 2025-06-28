@@ -35,7 +35,7 @@ class Facture extends Model
         'client_adresse',
         'client_telephone',
         'client_email',
-        'numero',
+        'numero', // Ajouté par une migration ultérieure, correct ici
         'date_facture',
         'montant_ht',
         'tva',
@@ -43,11 +43,14 @@ class Facture extends Model
         'statut_paiement',
         'date_paiement',
         'mode_paiement',
-        'quantity',
-        'prix_unitaire',
-        'date',
+        // 'quantity', // Appartient à la table pivot article_facture
+        // 'prix_unitaire', // Appartient à la table pivot article_facture
+        // 'date', // Trop vague, date_facture et date_paiement sont spécifiques
     ];
 
+    /**
+     * Les articles associés à cette facture.
+     */
     public function articles()
     {
         return $this->belongsToMany(Article::class, 'article_facture')
@@ -55,26 +58,34 @@ class Facture extends Model
                     ->withTimestamps();
     }
 
-
-    public function scopeSearch($query, $search)
-    {
-        return $query->where('client_id', 'like', "%{$search}%")
-            ->orWhere('produit_id', 'like', "%{$search}%")
-            ->orWhere('quantite', 'like', "%{$search}%")
-            ->orWhere('prix_unitaire', 'like', "%{$search}%")
-            ->orWhere('date_facture', 'like', "%{$search}%")
-            ->orWhere('statut', 'like', "%{$search}%");
-    }
-
-    public function scopeFilter($query, array $filters)
+    /**
+     * Filtre les factures en fonction des critères de recherche.
+     * Ce scope est destiné à remplacer l'ancien scope 'search' et 'filter'.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  array  $filters
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeApplyFilters($query, array $filters)
     {
         $query->when($filters['search'] ?? null, function ($query, $search) {
-            $query->where('client_id', 'like', "%{$search}%")
-                ->orWhere('produit_id', 'like', "%{$search}%")
-                ->orWhere('quantite', 'like', "%{$search}%")
-                ->orWhere('prix_unitaire', 'like', "%{$search}%")
-                ->orWhere('date_facture', 'like', "%{$search}%")
-                ->orWhere('statut', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('numero', 'like', "%{$search}%")
+                  ->orWhere('client_nom', 'like', "%{$search}%")
+                  ->orWhere('client_email', 'like', "%{$search}%")
+                  ->orWhere('statut_paiement', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%"); // Recherche par ID peut être utile
+            });
         });
+
+        // TODO: Ajouter d'autres filtres si nécessaire (par date, montant, etc.)
+        // $query->when($filters['date_from'] ?? null, function ($query, $date_from) {
+        //     $query->where('date_facture', '>=', $date_from);
+        // });
+        // $query->when($filters['date_to'] ?? null, function ($query, $date_to) {
+        //     $query->where('date_facture', '<=', $date_to);
+        // });
+
+        return $query;
     }
 }

@@ -5,21 +5,27 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEmplacementRequest;
 use App\Http\Requests\UpdateEmplacementRequest;
 use App\Models\Emplacement;
+use Illuminate\Http\Request; // Ajouté pour la méthode index
 
 class EmplacementController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Affiche une liste des ressources.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('emplacements.index', [
-            'emplacements' => Emplacement::all(),
-        ]);
+        // TODO: Ajouter la recherche et la pagination ici si nécessaire
+        $emplacements = Emplacement::latest()->paginate(10); // Pagination ajoutée
+        return view('emplacements.index', compact('emplacements'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Affiche le formulaire de création d'une nouvelle ressource.
+     *
+     * @return \Illuminate\View\View
      */
     public function create()
     {
@@ -27,23 +33,24 @@ class EmplacementController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Enregistre une nouvelle ressource dans la base de données.
+     *
+     * @param  \App\Http\Requests\StoreEmplacementRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreEmplacementRequest $request)
     {
-        $request->validate(['name' => 'required|unique:categories',
-            'description' => 'nullable|string|max:255', // Validation pour la description
-        ]);
-
-        Emplacement::create(['name' => $request->name,
-            'description' => $request->description]);
+        Emplacement::create($request->validated());
 
         return redirect()->route('emplacements.index')
-            ->with('success', 'categorie created successfully.');
+            ->with('success', 'Emplacement créé avec succès.');
     }
 
     /**
-     * Display the specified resource.
+     * Affiche la ressource spécifiée.
+     *
+     * @param  \App\Models\Emplacement  $emplacement
+     * @return \Illuminate\View\View
      */
     public function show(Emplacement $emplacement)
     {
@@ -51,7 +58,10 @@ class EmplacementController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Affiche le formulaire de modification de la ressource spécifiée.
+     *
+     * @param  \App\Models\Emplacement  $emplacement
+     * @return \Illuminate\View\View
      */
     public function edit(Emplacement $emplacement)
     {
@@ -59,29 +69,32 @@ class EmplacementController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Met à jour la ressource spécifiée dans la base de données.
+     *
+     * @param  \App\Http\Requests\UpdateEmplacementRequest  $request
+     * @param  \App\Models\Emplacement  $emplacement
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateEmplacementRequest $request, Emplacement $emplacement)
     {
-        $request->validate(['name' => 'required|unique:categories,name,' . $emplacement->id,
-            'description' => 'nullable|string|max:255',
-        ]);
-
-        $emplacement->update(['name' => $request->name,
-            'description' => $request->description]);
+        $emplacement->update($request->validated());
 
         return redirect()->route('emplacements.index')
-            ->with('success', 'categorie updated successfully.');
+            ->with('success', 'Emplacement mis à jour avec succès.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Supprime la ressource spécifiée de la base de données.
+     *
+     * @param  \App\Models\Emplacement  $emplacement
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Emplacement $emplacement)
     {
+        // TODO: Vérifier si l'emplacement est utilisé par des articles avant de supprimer
         $emplacement->delete();
 
         return redirect()->route('emplacements.index')
-            ->with('success', 'categorie deleted successfully.');
+            ->with('success', 'Emplacement supprimé avec succès.');
     }
 }

@@ -5,21 +5,27 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCategorieRequest;
 use App\Http\Requests\UpdateCategorieRequest;
 use App\Models\Categorie;
+use Illuminate\Http\Request; // Ajouté pour la méthode index si on veut ajouter une recherche plus tard
 
 class CategorieController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Affiche une liste des ressources.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request) // Ajout de Request pour une future recherche/filtrage
     {
-        return view('categories.index', [
-            'categories' => Categorie::all(),
-        ]);
+        // TODO: Ajouter la recherche et la pagination ici si nécessaire
+        $categories = Categorie::latest()->paginate(10); // Pagination ajoutée, ajuster le nombre au besoin
+        return view('categories.index', compact('categories'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Affiche le formulaire de création d'une nouvelle ressource.
+     *
+     * @return \Illuminate\View\View
      */
     public function create()
     {
@@ -27,23 +33,24 @@ class CategorieController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Enregistre une nouvelle ressource dans la base de données.
+     *
+     * @param  \App\Http\Requests\StoreCategorieRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreCategorieRequest $request)
     {
-        $request->validate(['name' => 'required|unique:categories',
-            'description' => 'nullable|string|max:255', // Validation pour la description
-        ]);
-
-        Categorie::create(['name' => $request->name,
-            'description' => $request->description]);
+        Categorie::create($request->validated());
 
         return redirect()->route('categories.index')
-            ->with('success', 'categorie created successfully.');
+            ->with('success', 'Catégorie créée avec succès.');
     }
 
     /**
-     * Display the specified resource.
+     * Affiche la ressource spécifiée.
+     *
+     * @param  \App\Models\Categorie  $categorie
+     * @return \Illuminate\View\View
      */
     public function show(Categorie $categorie)
     {
@@ -51,7 +58,10 @@ class CategorieController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Affiche le formulaire de modification de la ressource spécifiée.
+     *
+     * @param  \App\Models\Categorie  $categorie
+     * @return \Illuminate\View\View
      */
     public function edit(Categorie $categorie)
     {
@@ -59,29 +69,33 @@ class CategorieController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Met à jour la ressource spécifiée dans la base de données.
+     *
+     * @param  \App\Http\Requests\UpdateCategorieRequest  $request
+     * @param  \App\Models\Categorie  $categorie
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateCategorieRequest $request, Categorie $categorie)
     {
-        $request->validate(['name' => 'required|unique:categories,name,' . $categorie->id,
-            'description' => 'nullable|string|max:255', // Validation pour la description
-        ]);
-
-        $categorie->update(['name' => $request->name,
-            'description' => $request->description]);
+        $categorie->update($request->validated());
 
         return redirect()->route('categories.index')
-            ->with('success', 'Categorie updated successfully.');
+            ->with('success', 'Catégorie mise à jour avec succès.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Supprime la ressource spécifiée de la base de données.
+     *
+     * @param  \App\Models\Categorie  $categorie
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Categorie $categorie)
     {
+        // TODO: Vérifier si la catégorie est utilisée par des articles avant de supprimer
+        // ou gérer la suppression en cascade / mise à null dans la base de données.
         $categorie->delete();
 
         return redirect()->route('categories.index')
-            ->with('success', 'Categorie deleted successfully.');
+            ->with('success', 'Catégorie supprimée avec succès.');
     }
 }
