@@ -3,152 +3,147 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use App\Models\Accueil;
+// Models nécessaires pour le tableau de bord
 use App\Models\Article;
 use App\Models\Facture;
 use App\Models\Fournisseur;
+use App\Models\Categorie; // Ajout du modèle Categorie
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreAccueilRequest;
-use App\Http\Requests\UpdateAccueilRequest;
+// Les StoreAccueilRequest et UpdateAccueilRequest ne sont probablement pas nécessaires si AccueilController ne gère que l'affichage.
+// use App\Http\Requests\StoreAccueilRequest;
+// use App\Http\Requests\UpdateAccueilRequest;
+// Le modèle Accueil n'est pas utilisé si c'est juste pour afficher le dashboard.
+// use App\Models\Accueil;
+
 
 class AccueilController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Affiche le tableau de bord principal de l'application.
+     *
+     * @return \Illuminate\View\View
      */
-public function index()
-{
-    // Récupérer toutes les factures
-    $factures = Facture::all();
+    public function index()
+    {
+        // Données pour les cartes de statistiques rapides
+        $nombreFournisseurs = Fournisseur::count();
+        $nombreFactures = Facture::count(); // Total des factures
+        $chiffreAffairesMoisCourant = Facture::whereYear('date_facture', now()->year)
+                                             ->whereMonth('date_facture', now()->month)
+                                             ->sum('montant_ttc');
+        $seuilStockFaible = 5; // Peut être mis en configuration
+        $articlesEnAlerteStock = Article::where('quantite', '<=', $seuilStockFaible)->count();
 
-    // Calculer le nombre total de factures
-    $nombreFactures = $factures->count();
+        // Données pour le graphique des ventes journalières (7 derniers jours)
+        $ventesQuery = Facture::select(
+                DB::raw('DATE(date_facture) as date'),
+                DB::raw('SUM(montant_ttc) as total_ventes')
+            )
+            ->where('date_facture', '>=', Carbon::now()->subDays(6)) // 6 jours avant + aujourd'hui = 7 jours
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
 
-    // Calculer le montant total des factures
-    // $montantTotal = $factures->sum('montant_ttc');
+        $ventesJournalieresLabels = [];
+        $ventesJournalieresData = [];
+        $period = Carbon::now()->subDays(6);
+        for ($i = 0; $i < 7; $i++) {
+            $dateStr = $period->format('Y-m-d');
+            $ventesJournalieresLabels[] = $period->format('d/m');
+            $venteDuJour = $ventesQuery->firstWhere('date', $dateStr);
+            $ventesJournalieresData[] = $venteDuJour ? $venteDuJour->total_ventes : 0;
+            $period->addDay();
+        }
+        $ventesJournalieres = [
+            'labels' => $ventesJournalieresLabels,
+            'data' => $ventesJournalieresData,
+        ];
 
-    // Calculer le montant total des factures par mois
-    $montantTotal = $factures->filter(function ($facture) {
-        $dateFacture = Carbon::parse($facture->date_facture);
-        return $dateFacture->year == now()->year && $dateFacture->month == now()->month;
-    })->sum('montant_ttc');
 
-    // Calculer le nombre de factures payées
-    $nombreFacturesPayees = $factures->where('statut_paiement', 'payé')->count();
+        // Données pour le graphique de répartition des articles par catégorie
+        $categoriesData = Categorie::withCount('articles')->has('articles')->get(); // Uniquement les catégories avec des articles
+        $articlesParCategorieLabels = $categoriesData->pluck('name')->toArray();
+        $articlesParCategorieData = $categoriesData->pluck('articles_count')->toArray();
 
-    // Calculer le nombre de factures impayées
-    $nombreFacturesImpayees = $factures->where('statut_paiement', 'impayé')->count();
+        // Données pour la table des articles récents
+        $articlesRecents = Article::with('category') // Eager load la catégorie pour éviter N+1 requêtes
+                                   ->orderBy('updated_at', 'desc')
+                                   ->take(5)
+                                   ->get();
 
-    // Calculer le montant total des factures impayées
-    $montantImpayes = $factures->where('statut_paiement', 'impayé')->sum('montant_ttc');
-
-    // Calculer le nombre de factures pour le mois courant
-    $nombreFacturesMoisCourant = $factures->filter(function ($facture) {
-        $dateFacture = Carbon::parse($facture->date_facture);
-        return $dateFacture->year == now()->year && $dateFacture->month == now()->month;
-    })->count();
-
-    // Calculer le montant total par mode de paiement
-    $montantCarte = $factures->where('mode_paiement', 'carte')->sum('montant_ttc');
-    $montantCheque = $factures->where('mode_paiement', 'chèque')->sum('montant_ttc');
-    $montantEspeces = $factures->where('mode_paiement', 'espèces')->sum('montant_ttc');
-
-    // Récupérer les factures impayées
-    $facturesImpayees = $factures->where('statut_paiement', 'impayé');
-
-    // Récupérer les factures récentes (par exemple, les 10 dernières)
-    $facturesRecentes = $factures->sortByDesc(function ($facture) {
-        return Carbon::parse($facture->date_facture);
-    })->take(10);
-
-    // Calculer les données pour le graphique d'évolution des impayés
-    $labels = [];
-    $data = [];
-    for ($i = 1; $i <= 12; $i++) {
-        $labels[] = date('M', mktime(0, 0, 0, $i, 1));
-        $data[] = $factures->filter(function ($facture) use ($i) {
-            $dateFacture = Carbon::parse($facture->date_facture);
-            return $dateFacture->month == $i && $facture->statut_paiement == 'impayé';
-        })->sum('montant_ttc');
+        // Passer toutes les variables à la vue du tableau de bord
+        return view('Accueil.index', compact(
+            'nombreFournisseurs',
+            'nombreFactures',
+            'chiffreAffairesMoisCourant',
+            'articlesEnAlerteStock',
+            'ventesJournalieres',
+            'articlesParCategorieLabels',
+            'articlesParCategorieData',
+            'articlesRecents',
+            'seuilStockFaible' // Optionnel, si utilisé dans la vue pour la coloration
+        ));
     }
 
-    // Passer les variables à la vue
-    return view('welcome', compact(
-        'nombreFactures',
-        'montantTotal',
-        'nombreFacturesPayees',
-        'nombreFacturesImpayees',
-        'montantImpayes',
-        'nombreFacturesMoisCourant',
-        'montantCarte',
-        'montantCheque',
-        'montantEspeces',
-        'facturesImpayees',
-        'facturesRecentes',
-        'labels',
-        'data'
-    ));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // Les autres méthodes (create, store, show, edit, update, destroy) du contrôleur resourceful Accueil
+    // ne sont probablement pas nécessaires si ce contrôleur sert uniquement à afficher le tableau de bord.
+    // Elles peuvent être supprimées si la route `Route::resource('accueil', AccueilController::class);`
+    // est remplacée par une simple route GET pour la méthode index, comme c'est déjà le cas pour '/'.
+    // Route::get('/', [App\Http\Controllers\AccueilController::class, 'index'])->name('accueil');
+    // Si Route::resource('accueil', ...) est conservé, ces méthodes doivent exister même si vides.
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        //
+        // Inutilisé pour un simple tableau de bord, sauf si "accueil" est une ressource gérable.
+        abort(404);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAccueilRequest $request)
+    public function store(/*StoreAccueilRequest $request*/) // Le RequestObject serait spécifique
     {
-        //
+        // Inutilisé
+        abort(404);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Accueil $accueil)
+    public function show(/*Accueil $accueil*/) // Le modèle Accueil serait spécifique
     {
-        //
+        // Inutilisé
+        abort(404);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Accueil $accueil)
+    public function edit(/*Accueil $accueil*/)
     {
-        //
+        // Inutilisé
+        abort(404);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAccueilRequest $request, Accueil $accueil)
+    public function update(/*UpdateAccueilRequest $request, Accueil $accueil*/)
     {
-        //
+        // Inutilisé
+        abort(404);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Accueil $accueil)
+    public function destroy(/*Accueil $accueil*/)
     {
-        //
+        // Inutilisé
+        abort(404);
     }
 }
