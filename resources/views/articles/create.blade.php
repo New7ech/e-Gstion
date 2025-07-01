@@ -33,31 +33,45 @@
 {{-- Conteneur principal pour le formulaire de création d'article --}}
 <div class="row">
     <div class="col-md-12">
+        {{-- Carte KaiAdmin pour le formulaire --}}
         <div class="card">
             <div class="card-header">
-                <h4 class="card-title">Formulaire d'Ajout d'Article</h4>
+                <div class="card-title">Formulaire de Création d'Article</div>
+                <div class="card-category">Remplissez les informations ci-dessous pour ajouter un nouvel article au stock.</div>
             </div>
             <div class="card-body">
+                {{-- Affichage des erreurs de validation générales --}}
                 @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Erreur !</strong> Veuillez corriger les erreurs ci-dessous.
+                        <ul>
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
 
-                <form action="{{ route('articles.store') }}" method="POST" enctype="multipart/form-data">
+                {{-- Formulaire de création d'article --}}
+                {{-- La classe 'needs-validation' active la validation Bootstrap côté client --}}
+                {{-- 'novalidate' désactive la validation HTML5 par défaut pour laisser Bootstrap gérer --}}
+                <form action="{{ route('articles.store') }}" method="POST" class="needs-validation" novalidate>
                     @csrf
+
+                    {{-- Champ Nom de l'article --}}
                     <div class="form-group">
-                        <label for="name">Nom de l'article</label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
-                        @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <label for="name">Nom de l'article <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
+                               required value="{{ old('name') }}" placeholder="Entrez le nom de l'article">
+                        {{-- Message d'erreur spécifique pour le champ 'name' --}}
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        {{-- Message de validation standard de Bootstrap --}}
+                        <div class="invalid-feedback">Le nom de l'article est requis.</div>
                     </div>
 
-<<<<<<< HEAD
-=======
                     {{-- Champ Slug --}}
                     <div class="form-group">
                         <label for="slug">Slug (URL)</label>
@@ -70,15 +84,15 @@
                     </div>
 
                     {{-- Champ Description --}}
->>>>>>> 382f1d1b418cf33b737731516d6ac9d3619e260b
                     <div class="form-group">
                         <label for="description">Description</label>
-                        <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="3">{{ old('description') }}</textarea>
-                        @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror"
+                                  rows="3" placeholder="Décrivez brièvement l'article">{{ old('description') }}</textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
-<<<<<<< HEAD
-=======
                     {{-- Champ SKU (Code Article) --}}
                     <div class="form-group">
                         <label for="sku">SKU (Code Article)</label>
@@ -101,26 +115,33 @@
                     </div>
 
                     {{-- Ligne pour les champs Prix et Quantité --}}
->>>>>>> 382f1d1b418cf33b737731516d6ac9d3619e260b
                     <div class="row">
                         <div class="col-md-6">
+                            {{-- Champ Prix --}}
                             <div class="form-group">
-                                <label for="prix">Prix (FCFA)</label>
-                                <input type="number" step="any" class="form-control @error('prix') is-invalid @enderror" id="prix" name="prix" value="{{ old('prix') }}" required>
-                                @error('prix') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <label for="prix">Prix (FCFA) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0" name="prix" id="prix"
+                                       class="form-control @error('prix') is-invalid @enderror" required value="{{ old('prix') }}" placeholder="0.00">
+                                @error('prix')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="invalid-feedback">Le prix est requis et doit être un nombre positif.</div>
                             </div>
                         </div>
                         <div class="col-md-6">
+                            {{-- Champ Quantité --}}
                             <div class="form-group">
-                                <label for="quantite">Quantité en Stock</label>
-                                <input type="number" class="form-control @error('quantite') is-invalid @enderror" id="quantite" name="quantite" value="{{ old('quantite', 0) }}" required>
-                                @error('quantite') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <label for="quantite">Quantité en stock <span class="text-danger">*</span></label>
+                                <input type="number" min="0" name="quantite" id="quantite"
+                                       class="form-control @error('quantite') is-invalid @enderror" required value="{{ old('quantite', 0) }}" placeholder="0">
+                                @error('quantite')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="invalid-feedback">La quantité est requise et doit être un nombre positif ou nul.</div>
                             </div>
                         </div>
                     </div>
 
-<<<<<<< HEAD
-=======
                     {{-- Champ Prix Promotionnel --}}
                     <div class="form-group">
                         <label for="prix_promotionnel">Prix Promotionnel (FCFA)</label>
@@ -164,51 +185,53 @@
                     </div>
 
                     {{-- Champ Catégorie --}}
->>>>>>> 382f1d1b418cf33b737731516d6ac9d3619e260b
                     <div class="form-group">
-                        <label for="categorie_id">Catégorie</label>
-                        <select class="form-control @error('categorie_id') is-invalid @enderror" id="categorie_id" name="categorie_id">
-                            <option value="">Sélectionner une catégorie</option>
-                            @foreach($categories as $categorie) {{-- Assuming $categories is passed from controller --}}
-                                <option value="{{ $categorie->id }}" {{ old('categorie_id') == $categorie->id ? 'selected' : '' }}>{{ $categorie->nom }}</option> {{-- Assuming 'nom' for categorie name --}}
+                        <label for="category_id">Catégorie</label>
+                        <select name="category_id" id="category_id" class="form-select @error('category_id') is-invalid @enderror">
+                            <option value="">-- Choisir une catégorie --</option>
+                            @foreach($categories as $categorie)
+                                <option value="{{ $categorie->id }}" {{ old('category_id') == $categorie->id ? 'selected' : '' }}>
+                                    {{ $categorie->name }}
+                                </option>
                             @endforeach
                         </select>
-                        @error('categorie_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @error('category_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
+                    {{-- Champ Fournisseur --}}
                     <div class="form-group">
                         <label for="fournisseur_id">Fournisseur</label>
-                        <select class="form-control @error('fournisseur_id') is-invalid @enderror" id="fournisseur_id" name="fournisseur_id">
-                            <option value="">Sélectionner un fournisseur</option>
-                            @foreach($fournisseurs as $fournisseur) {{-- Assuming $fournisseurs is passed from controller --}}
-                                <option value="{{ $fournisseur->id }}" {{ old('fournisseur_id') == $fournisseur->id ? 'selected' : '' }}>{{ $fournisseur->nom }}</option> {{-- Assuming 'nom' for fournisseur name --}}
+                        <select name="fournisseur_id" id="fournisseur_id" class="form-select @error('fournisseur_id') is-invalid @enderror">
+                            <option value="">-- Choisir un fournisseur --</option>
+                            @foreach($fournisseurs as $fournisseur)
+                                <option value="{{ $fournisseur->id }}" {{ old('fournisseur_id') == $fournisseur->id ? 'selected' : '' }}>
+                                    {{ $fournisseur->name }}
+                                </option>
                             @endforeach
                         </select>
-                        @error('fournisseur_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @error('fournisseur_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
+                    {{-- Champ Emplacement --}}
                     <div class="form-group">
-                        <label for="emplacement_id">Emplacement</label>
-                        <select class="form-control @error('emplacement_id') is-invalid @enderror" id="emplacement_id" name="emplacement_id">
-                            <option value="">Sélectionner un emplacement</option>
-                            @foreach($emplacements as $emplacement) {{-- Assuming $emplacements is passed from controller --}}
-                                <option value="{{ $emplacement->id }}" {{ old('emplacement_id') == $emplacement->id ? 'selected' : '' }}>{{ $emplacement->nom }}</option> {{-- Assuming 'nom' for emplacement name --}}
+                        <label for="emplacement_id">Emplacement de stockage</label>
+                        <select name="emplacement_id" id="emplacement_id" class="form-select @error('emplacement_id') is-invalid @enderror">
+                            <option value="">-- Choisir un emplacement --</option>
+                            @foreach($emplacements as $emplacement)
+                                <option value="{{ $emplacement->id }}" {{ old('emplacement_id') == $emplacement->id ? 'selected' : '' }}>
+                                    {{ $emplacement->name }}
+                                </option>
                             @endforeach
                         </select>
-                        @error('emplacement_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @error('emplacement_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
-<<<<<<< HEAD
-                    <div class="form-group">
-                        <label for="image_path">Image de l'article</label>
-                        <input type="file" class="form-control-file @error('image_path') is-invalid @enderror" id="image_path" name="image_path"> {{-- Consider using form-control for consistency if Kaiadmin styles form-control-file differently --}}
-                        @error('image_path') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                    </div>
-
-                    <div class="card-action">
-                        <button type="submit" class="btn btn-success">Enregistrer</button>
-                        <a href="{{ route('articles.index') }}" class="btn btn-danger">Annuler</a>
-=======
                     {{-- Champ Est Visible --}}
                     <div class="form-group form-check">
                         <input type="hidden" name="est_visible" value="0"> {{-- Valeur par défaut si la case n'est pas cochée --}}
@@ -231,7 +254,6 @@
                         <a href="{{ route('articles.index') }}" class="btn btn-danger">
                             <i class="fas fa-times"></i> Annuler
                         </a>
->>>>>>> 382f1d1b418cf33b737731516d6ac9d3619e260b
                     </div>
                 </form>
             </div>
