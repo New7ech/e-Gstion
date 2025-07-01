@@ -31,7 +31,7 @@ class StoreArticleRequest extends FormRequest
             'fournisseur_id' => 'nullable|exists:fournisseurs,id',
             'emplacement_id' => 'nullable|exists:emplacements,id',
             'sku' => 'nullable|string|max:100|unique:articles,sku',
-            'image_principale' => 'nullable|string|max:2048', // Pour l'URL de l'image
+            'image_principale' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Modifié pour l'upload d'image
             'statut' => 'nullable|string|in:disponible,brouillon,archivé,en_rupture_de_stock',
             'poids' => 'nullable|numeric|min:0',
             'slug' => 'nullable|string|max:255|unique:articles,slug',
@@ -66,8 +66,9 @@ class StoreArticleRequest extends FormRequest
             'sku.string' => "Le SKU doit être une chaîne de caractères.",
             'sku.max' => "Le SKU ne doit pas dépasser 100 caractères.",
             'sku.unique' => "Ce SKU existe déjà.",
-            'image_principale.string' => "L'URL de l'image principale doit être une chaîne de caractères.",
-            'image_principale.max' => "L'URL de l'image principale ne doit pas dépasser 2048 caractères.",
+            'image_principale.image' => "Le fichier doit être une image.",
+            'image_principale.mimes' => "L'image doit être de type : jpeg, png, jpg, gif, svg, webp.",
+            'image_principale.max' => "L'image ne doit pas dépasser 2Mo (2048 Ko).",
             'statut.string' => "Le statut doit être une chaîne de caractères.",
             'statut.in' => "Le statut sélectionné n'est pas valide.",
             'poids.numeric' => "Le poids doit être un nombre.",

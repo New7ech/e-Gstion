@@ -64,6 +64,29 @@ class Article extends Model
     ];
 
     /**
+     * Obtient l'URL complète de l'image principale de l'article.
+     *
+     * @return string|null
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->image_principale) {
+            // Vérifie si le fichier existe dans le disque public
+            // Note: Storage::disk('public')->exists() est plus sûr mais peut être plus lourd.
+            // Pour une simple URL, on peut se contenter de construire le chemin.
+            // Si le fichier est stocké avec un chemin complet (improbable avec l'upload), ajuster ici.
+            if (str_starts_with($this->image_principale, 'http://') || str_starts_with($this->image_principale, 'https://')) {
+                return $this->image_principale; // C'est déjà une URL complète
+            }
+            // S'assurer que storage:link a été exécuté
+            return asset('storage/' . $this->image_principale);
+        }
+        // Retourner une image par défaut ou null si aucune image n'est définie
+        // return asset('images/default_article_image.png'); // Exemple d'image par défaut
+        return null;
+    }
+
+    /**
      * Obtient les factures associées à l'article.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany

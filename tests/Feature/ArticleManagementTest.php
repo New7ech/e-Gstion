@@ -9,10 +9,20 @@ use App\Models\Article;
 use App\Models\Categorie;
 use App\Models\Fournisseur;
 use App\Models\Emplacement;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class ArticleManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Crée un faux disque de stockage pour les tests
+        // Les fichiers seront stockés dans storage/framework/testing/disks/public
+        Storage::fake('public');
+    }
 
     // Méthode utilitaire pour créer et authentifier un utilisateur
     protected function authenticateUser()
@@ -71,7 +81,37 @@ class ArticleManagementTest extends TestCase
             'fournisseur_id' => $fournisseur->id,
             'emplacement_id' => $emplacement->id,
             'created_by' => $user->id,
+            // On ne vérifie pas image_principale ici car le test original n'incluait pas l'upload
         ]);
+    }
+
+    /** @test */
+    public function test_utilisateur_peut_creer_article_avec_image()
+    {
+        $user = $this->authenticateUser();
+        $category = Categorie::factory()->create();
+        $fournisseur = Fournisseur::factory()->create();
+        $emplacement = Emplacement::factory()->create();
+
+        $articleData = [
+            'name' => 'Article With Image',
+            'description' => 'Description for article with image.',
+            'prix' => 99.99,
+            'quantite' => 10,
+            'category_id' => $category->id,
+            'fournisseur_id' => $fournisseur->id,
+            'emplacement_id' => $emplacement->id,
+            'image_principale' => UploadedFile::fake()->image('article_image.jpg', 100, 100)->size(100), // kb
+        ];
+
+        $response = $this->post(route('articles.store'), $articleData);
+
+        $response->assertRedirect(route('articles.index'));
+        $this->assertDatabaseHas('articles', ['name' => 'Article With Image']);
+
+        $article = Article::where('name', 'Article With Image')->first();
+        $this->assertNotNull($article->image_principale);
+        Storage::disk('public')->assertExists($article->image_principale);
     }
 
     /**
@@ -147,15 +187,82 @@ class ArticleManagementTest extends TestCase
     }
 
     /** @test */
-    public function test_utilisateur_authentifie_peut_supprimer_article()
+    public function test_utilisateur_peut_mettre_a_jour_article_avec_nouvelle_image()
+    {
+        $this->authenticateUser();
+        $article = Article::factory()->create([
+            'image_principale' => UploadedFile::fake()->image('old_image.jpg')->store('articles_images', 'public')
+        ]);
+        $oldImagePath = $article->image_principale;
+
+        $updatedData = [
+            'name' => 'Updated Name With New Image',
+            'description' => $article->description, // garder les autres champs pour la validité
+            'prix' => $article->prix,
+            'quantite' => $article->quantite,
+            'category_id' => $article->category_id,
+            'fournisseur_id' => $article->fournisseur_id,
+            'emplacement_id' => $article->emplacement_id,
+            'image_principale' => UploadedFile::fake()->image('new_image.jpg', 120, 120)->size(150),
+        ];
+
+        $response = $this->put(route('articles.update', $article), $updatedData);
+
+        $response->assertRedirect(route('articles.index'));
+        $article->refresh();
+        $this->assertNotNull($article->image_principale);
+        $this->assertNotEquals($oldImagePath, $article->image_principale);
+        Storage::disk('public')->assertMissing($oldImagePath);
+        Storage::disk('public')->assertExists($article->image_principale);
+    }
+
+    /** @test */
+    public function test_utilisateur_peut_supprimer_image_article_lors_mise_a_jour()
+    {
+        $this->authenticateUser();
+        $article = Article::factory()->create([
+            'image_principale' => UploadedFile::fake()->image('image_to_delete.jpg')->store('articles_images', 'public')
+        ]);
+        $imagePathToDelete = $article->image_principale;
+
+        $updatedData = [
+            'name' => 'Article With Image Deleted',
+            'description' => $article->description,
+            'prix' => $article->prix,
+            'quantite' => $article->quantite,
+            'category_id' => $article->category_id,
+            'fournisseur_id' => $article->fournisseur_id,
+            'emplacement_id' => $article->emplacement_id,
+            'supprimer_image_principale' => '1', // Simule la case cochée
+        ];
+
+        $response = $this->put(route('articles.update', $article), $updatedData);
+
+        $response->assertRedirect(route('articles.index'));
+        $article->refresh();
+        $this->assertNull($article->image_principale);
+        Storage::disk('public')->assertMissing($imagePathToDelete);
+    }
+
+
+    /** @test */
+    public function test_utilisateur_authentifie_peut_supprimer_article_et_son_image()
     {
         $user = $this->authenticateUser();
-        $article = Article::factory()->create(['created_by' => $user->id]);
+        // Crée un article avec une image
+        $imagePath = UploadedFile::fake()->image('article_to_delete.jpg')->store('articles_images', 'public');
+        $article = Article::factory()->create([
+            'created_by' => $user->id,
+            'image_principale' => $imagePath,
+        ]);
+
+        $this->assertTrue(Storage::disk('public')->exists($imagePath));
 
         $response = $this->delete(route('articles.destroy', $article));
 
         $response->assertRedirect(route('articles.index'));
         $response->assertSessionHas('success', 'Article supprimé avec succès.');
         $this->assertDatabaseMissing('articles', ['id' => $article->id]);
+        Storage::disk('public')->assertMissing($imagePath); // Vérifie que l'image est supprimée du stockage
     }
 }

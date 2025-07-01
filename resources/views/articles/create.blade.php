@@ -56,7 +56,7 @@
                 {{-- Formulaire de création d'article --}}
                 {{-- La classe 'needs-validation' active la validation Bootstrap côté client --}}
                 {{-- 'novalidate' désactive la validation HTML5 par défaut pour laisser Bootstrap gérer --}}
-                <form action="{{ route('articles.store') }}" method="POST" class="needs-validation" novalidate>
+                <form action="{{ route('articles.store') }}" method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
                     @csrf
 
                     {{-- Champ Nom de l'article --}}
@@ -104,14 +104,14 @@
                         <small class="form-text text-muted">Code unique pour la gestion de stock.</small>
                     </div>
 
-                    {{-- Champ Image Principale (URL) --}}
+                    {{-- Champ Image Principale (Upload) --}}
                     <div class="form-group">
-                        <label for="image_principale">URL de l'Image Principale</label>
-                        <input type="text" name="image_principale" id="image_principale" class="form-control @error('image_principale') is-invalid @enderror"
-                               value="{{ old('image_principale') }}" placeholder="https://exemple.com/image.jpg">
+                        <label for="image_principale">Image Principale</label>
+                        <input type="file" name="image_principale" id="image_principale" class="form-control @error('image_principale') is-invalid @enderror">
                         @error('image_principale')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="form-text text-muted">Formats acceptés : jpeg, png, jpg, gif, svg, webp. Taille max : 2Mo.</small>
                     </div>
 
                     {{-- Ligne pour les champs Prix et Quantité --}}

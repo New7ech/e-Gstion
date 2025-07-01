@@ -12,6 +12,7 @@ use App\Models\Fournisseur;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
@@ -75,7 +76,15 @@ class ArticleController extends Controller
 
 
         // Ajoute l'ID de l'utilisateur authentifié comme créateur de l'article.
-        $article = Article::create($validatedData + ['created_by' => auth()->id()]);
+        $validatedData['created_by'] = auth()->id();
+
+        // Gestion de l'upload de l'image principale
+        if ($request->hasFile('image_principale')) {
+            $imagePath = $request->file('image_principale')->store('articles_images', 'public');
+            $validatedData['image_principale'] = $imagePath;
+        }
+
+        $article = Article::create($validatedData);
 
         return redirect()->route('articles.index')->with('success', 'Article créé avec succès.');
     }
@@ -147,6 +156,32 @@ class ArticleController extends Controller
         }
 
 
+        // Gestion de la suppression de l'image principale si la case est cochée
+        if ($request->has('supprimer_image_principale') && $request->input('supprimer_image_principale') == '1') {
+            if ($article->image_principale) {
+                Storage::disk('public')->delete($article->image_principale);
+                $validatedData['image_principale'] = null;
+            }
+        }
+
+        // Gestion de l'upload d'une nouvelle image principale
+        if ($request->hasFile('image_principale')) {
+            // Supprimer l'ancienne image si elle existe
+            if ($article->image_principale) {
+                Storage::disk('public')->delete($article->image_principale);
+            }
+            $imagePath = $request->file('image_principale')->store('articles_images', 'public');
+            $validatedData['image_principale'] = $imagePath;
+        }
+        // Si ni suppression ni nouvel upload, et que image_principale n'est pas dans validatedData,
+        // on s'assure de ne pas l'effacer par erreur si le champ file était juste vide.
+        // validatedData ne contiendra image_principale que si un nouveau fichier est uploadé.
+        // Si le champ est vide, il n'est pas dans la requête.
+        // Si supprimer_image_principale est coché, il sera mis à null ci-dessus.
+        // Donc, si image_principale n'est pas dans validatedData et que supprimer_image_principale n'est pas coché,
+        // on ne touche pas à la valeur existante. $article->update ne la modifiera pas.
+
+
         $article->update($validatedData);
 
         return redirect()->route('articles.index')->with('success', 'Article mis à jour avec succès.');
@@ -160,6 +195,11 @@ class ArticleController extends Controller
      */
     public function destroy(Article $article): \Illuminate\Http\RedirectResponse
     {
+        // Supprimer l'image principale associée si elle existe
+        if ($article->image_principale) {
+            Storage::disk('public')->delete($article->image_principale);
+        }
+
         $article->delete();
 
         return redirect()->route('articles.index')->with('success', 'Article supprimé avec succès.');

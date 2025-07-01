@@ -7,7 +7,48 @@
             <h1>{{ $article->name }}</h1>
         </div>
         <div class="card-body">
+            {{-- Affichage de l'image principale --}}
+            @if($article->imageUrl)
+                <div class="mb-4 text-center">
+                    <img src="{{ $article->imageUrl }}" alt="Image de {{ $article->name }}" class="img-fluid rounded" style="max-height: 400px; max-width: 100%;">
+                </div>
+            @elseif($article->image_principale && (str_starts_with($article->image_principale, 'http://') || str_starts_with($article->image_principale, 'https://')))
+                {{-- Fallback pour les anciennes URL directes si l'accesseur ne les gère pas comme prévu --}}
+                <div class="mb-4 text-center">
+                    <img src="{{ $article->image_principale }}" alt="Image de {{ $article->name }}" class="img-fluid rounded" style="max-height: 400px; max-width: 100%;">
+                </div>
+            @else
+                <div class="mb-4 text-center text-muted">
+                    <p>Aucune image principale disponible pour cet article.</p>
+                </div>
+            @endif
+
             <dl class="row">
+                {{-- Nouveaux champs e-commerce --}}
+                <dt class="col-sm-3">Slug :</dt>
+                <dd class="col-sm-9">{{ $article->slug ?: 'N/A' }}</dd>
+
+                <dt class="col-sm-3">SKU :</dt>
+                <dd class="col-sm-9">{{ $article->sku ?: 'N/A' }}</dd>
+
+                <dt class="col-sm-3">Statut :</dt>
+                <dd class="col-sm-9"><span class="badge bg-info text-dark">{{ ucfirst($article->statut) }}</span></dd>
+
+                <dt class="col-sm-3">Visible :</dt>
+                <dd class="col-sm-9">{{ $article->est_visible ? 'Oui' : 'Non' }}</dd>
+
+                @if($article->prix_promotionnel)
+                <dt class="col-sm-3">Prix Promotionnel :</dt>
+                <dd class="col-sm-9 text-danger fw-bold">{{ number_format($article->prix_promotionnel, 2, ',', ' ') }} FCFA</dd>
+                @endif
+
+                @if($article->poids)
+                <dt class="col-sm-3">Poids :</dt>
+                <dd class="col-sm-9">{{ $article->poids }} kg</dd>
+                @endif
+
+                <hr class="my-3"> {{-- Séparateur visuel --}}
+
                 <dt class="col-sm-3">Description :</dt>
                 <dd class="col-sm-9">{{ $article->description ?: 'N/A' }}</dd>
 

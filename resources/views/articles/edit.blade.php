@@ -57,7 +57,7 @@
                 {{-- Formulaire de modification d'article --}}
                 {{-- La classe 'needs-validation' active la validation Bootstrap côté client --}}
                 {{-- 'novalidate' désactive la validation HTML5 par défaut pour laisser Bootstrap gérer --}}
-                <form action="{{ route('articles.update', $article->id) }}" method="POST" class="needs-validation" novalidate>
+                <form action="{{ route('articles.update', $article->id) }}" method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
                     @csrf
                     @method('PUT') {{-- Méthode HTTP pour la mise à jour --}}
 
@@ -106,15 +106,29 @@
                         <small class="form-text text-muted">Code unique pour la gestion de stock.</small>
                     </div>
 
-                    {{-- Champ Image Principale (URL) --}}
+                    {{-- Champ Image Principale (Upload) --}}
                     <div class="form-group">
-                        <label for="image_principale">URL de l'Image Principale</label>
-                        <input type="text" name="image_principale" id="image_principale" class="form-control @error('image_principale') is-invalid @enderror"
-                               value="{{ old('image_principale', $article->image_principale) }}" placeholder="https://exemple.com/image.jpg">
+                        <label for="image_principale">Image Principale</label>
+                        <input type="file" name="image_principale" id="image_principale" class="form-control @error('image_principale') is-invalid @enderror">
                         @error('image_principale')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="form-text text-muted">Laissez vide pour conserver l'image actuelle. Formats : jpeg, png, jpg, gif, svg, webp. Max : 2Mo.</small>
+
+                        @if ($article->image_principale)
+                            <div class="mt-2">
+                                <label>Image actuelle :</label><br>
+                                <img src="{{ $article->imageUrl }}" alt="Image actuelle de {{ $article->name }}" style="max-width: 200px; max-height: 200px; border-radius: 5px;">
+                                <div class="form-check mt-1">
+                                    <input class="form-check-input" type="checkbox" name="supprimer_image_principale" id="supprimer_image_principale" value="1">
+                                    <label class="form-check-label" for="supprimer_image_principale">
+                                        Supprimer l'image principale actuelle
+                                    </label>
+                                </div>
+                            </div>
+                        @endif
                     </div>
+
 
                     {{-- Ligne pour les champs Prix et Quantité --}}
                     <div class="row">
