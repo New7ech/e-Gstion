@@ -53,6 +53,7 @@
                         <thead>
                             <tr>
                                 {{-- Colonnes de la table --}}
+                                <th style="width: 10%;">Image</th>
                                 <th>Nom</th>
                                 <th>Description</th>
                                 <th>Prix</th>
@@ -64,8 +65,15 @@
                             {{-- Boucle pour afficher chaque article --}}
                             @forelse($articles as $article)
                             <tr>
+                                <td>
+                                    @if($article->imageUrl)
+                                        <img src="{{ $article->imageUrl }}" alt="Image de {{ $article->name }}" class="img-thumbnail" style="width: 70px; height: 70px; object-fit: cover;">
+                                    @else
+                                        <span class="text-muted" style="display: inline-block; width: 70px; height: 70px; line-height: 70px; text-align: center; border: 1px solid #ddd; border-radius: .25rem;">Pas d'image</span>
+                                    @endif
+                                </td>
                                 <td>{{ $article->name }}</td>
-                                <td>{{ Str::limit($article->description, 50) }}</td>
+                                <td>{{ Str::limit($article->description, 40) }}</td> {{-- Réduit un peu pour faire de la place --}}
                                 <td>{{ number_format($article->prix, 2, ',', ' ') }} FCFA</td>
                                 <td>{{ $article->quantite }}</td>
                                 <td>
@@ -99,7 +107,7 @@
                             @empty
                             {{-- Cas où aucun article n'est trouvé --}}
                             <tr>
-                                <td colspan="5" class="text-center">
+                                <td colspan="6" class="text-center"> {{-- Augmenté le colspan à 6 --}}
                                     <div class="alert alert-info" role="alert">
                                         Aucun article trouvé pour le moment.
                                     </div>
@@ -126,7 +134,7 @@
                 "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json" // Traduction française
             },
             "columnDefs": [
-                { "orderable": false, "targets": 4 } // Désactiver le tri pour la colonne Actions
+                { "orderable": false, "targets": [0, 5] } // Désactiver le tri pour la colonne Image et Actions
             ]
         });
 

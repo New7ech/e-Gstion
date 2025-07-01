@@ -41,7 +41,7 @@ class ArticleFactory extends Factory
             'est_visible' => $this->faker->boolean(90), // 90% chance of being visible
             'description' => $this->faker->sentence,
             'sku' => strtoupper($this->faker->unique()->bothify('SKU-####??')), // Generates unique SKU like SKU-1234AB
-            'image_principale' => $this->faker->imageUrl(640, 480, 'technics', true, 'Faker Product'), // Placeholder image
+            'image_principale' => null, // Les images seront gérées par UploadedFile::fake() dans les tests
             'prix' => $prix,
             'prix_promotionnel' => $prix_promotionnel,
             'quantite' => $this->faker->numberBetween(0, 100), // Quantité peut être 0
