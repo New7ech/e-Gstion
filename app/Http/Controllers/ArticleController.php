@@ -11,6 +11,7 @@ use App\Models\Emplacement;
 use App\Models\Fournisseur;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
@@ -39,8 +40,8 @@ class ArticleController extends Controller
         $categories = Categorie::all();
         $fournisseurs = Fournisseur::all();
         $emplacements = Emplacement::all();
-        $users = User::all();
-        return view('articles.create', compact('categories', 'fournisseurs', 'emplacements', 'users'));
+        // $users n'est pas nécessaire ici car created_by est géré automatiquement
+        return view('articles.create', compact('categories', 'fournisseurs', 'emplacements'));
     }
 
     /**
@@ -51,8 +52,30 @@ class ArticleController extends Controller
      */
     public function store(StoreArticleRequest $request): \Illuminate\Http\RedirectResponse
     {
+        $validatedData = $request->validated();
+
+        // Gérer la valeur booléenne pour 'est_visible'
+        $validatedData['est_visible'] = $request->has('est_visible');
+
+        // Générer le slug s'il est vide
+        if (empty($validatedData['slug']) && !empty($validatedData['name'])) {
+            $validatedData['slug'] = Str::slug($validatedData['name']);
+            // Assurer l'unicité du slug généré (rare, mais possible)
+            $originalSlug = $validatedData['slug'];
+            $count = 1;
+            while (Article::where('slug', $validatedData['slug'])->exists()) {
+                $validatedData['slug'] = $originalSlug . '-' . $count++;
+            }
+        }
+
+        // S'assurer que prix_promotionnel est null si vide au lieu de 0 potentiellement
+        if (isset($validatedData['prix_promotionnel']) && $validatedData['prix_promotionnel'] === null) {
+            $validatedData['prix_promotionnel'] = null;
+        }
+
+
         // Ajoute l'ID de l'utilisateur authentifié comme créateur de l'article.
-        $article = Article::create($request->validated() + ['created_by' => auth()->id()]);
+        $article = Article::create($validatedData + ['created_by' => auth()->id()]);
 
         return redirect()->route('articles.index')->with('success', 'Article créé avec succès.');
     }
@@ -91,7 +114,40 @@ class ArticleController extends Controller
      */
     public function update(UpdateArticleRequest $request, Article $article): \Illuminate\Http\RedirectResponse
     {
-        $article->update($request->validated());
+        $validatedData = $request->validated();
+
+        // Gérer la valeur booléenne pour 'est_visible'
+        $validatedData['est_visible'] = $request->has('est_visible');
+
+        // Générer le slug s'il est vide ou si le nom a changé et le slug n'a pas été explicitement fourni
+        if (empty($validatedData['slug']) && !empty($validatedData['name'])) {
+            $newSlug = Str::slug($validatedData['name']);
+            if ($newSlug !== $article->slug) {
+                 $validatedData['slug'] = $newSlug;
+                // Assurer l'unicité du slug généré
+                $originalSlug = $validatedData['slug'];
+                $count = 1;
+                // On vérifie l'unicité en excluant l'article actuel
+                while (Article::where('slug', $validatedData['slug'])->where('id', '!=', $article->id)->exists()) {
+                    $validatedData['slug'] = $originalSlug . '-' . $count++;
+                }
+            } else {
+                // Si le slug est vide dans la requête mais que le nom n'a pas changé, on garde l'ancien slug
+                 $validatedData['slug'] = $article->slug;
+            }
+        }
+
+        // S'assurer que prix_promotionnel est null si vide
+        if (array_key_exists('prix_promotionnel', $validatedData) && $validatedData['prix_promotionnel'] === null) {
+            $validatedData['prix_promotionnel'] = null;
+        } else if (!array_key_exists('prix_promotionnel', $validatedData)) {
+            // Si la clé n'est pas du tout dans les données validées (parce que nullable et non envoyée), la définir à null
+            // pour éviter les problèmes si elle était précédemment définie.
+             $validatedData['prix_promotionnel'] = null;
+        }
+
+
+        $article->update($validatedData);
 
         return redirect()->route('articles.index')->with('success', 'Article mis à jour avec succès.');
     }
