@@ -34,13 +34,33 @@ class Article extends Model
      */
     protected $fillable = [
         'name',
+        'slug',
+        'est_visible',
         'description',
+        'sku',
+        'image_principale',
         'prix',
+        'prix_promotionnel',
         'quantite',
+        'statut',
+        'poids',
         'category_id',
         'fournisseur_id',
         'emplacement_id',
         'created_by'
+    ];
+
+    /**
+     * Les attributs qui doivent être castés vers des types natifs.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'prix' => 'decimal:2',
+        'prix_promotionnel' => 'decimal:2',
+        'poids' => 'decimal:3',
+        'est_visible' => 'boolean',
+        'quantite' => 'integer',
     ];
 
     /**

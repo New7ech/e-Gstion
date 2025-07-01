@@ -25,11 +25,28 @@ class ArticleFactory extends Factory
      */
     public function definition(): array
     {
+        $name = $this->faker->unique()->words(3, true); // Ensure name is unique for unique slug generation
+        $prix = $this->faker->randomFloat(2, 10, 1000);
+        // Ensure promo price is less than actual price, and handle cases where price is too low for a promo
+        $prix_promotionnel = null;
+        if ($prix > 5) { // Only set promo if price is high enough to have a promo
+            $prix_promotionnel = $this->faker->optional(0.3) // 30% chance of having a promotional price
+                                ->randomFloat(2, 5, $prix - 1);
+        }
+
+
         return [
-            'name' => $this->faker->words(3, true),
+            'name' => $name,
+            'slug' => \Illuminate\Support\Str::slug($name),
+            'est_visible' => $this->faker->boolean(90), // 90% chance of being visible
             'description' => $this->faker->sentence,
-            'prix' => $this->faker->randomFloat(2, 1, 1000),
-            'quantite' => $this->faker->numberBetween(1, 100),
+            'sku' => strtoupper($this->faker->unique()->bothify('SKU-####??')), // Generates unique SKU like SKU-1234AB
+            'image_principale' => $this->faker->imageUrl(640, 480, 'technics', true, 'Faker Product'), // Placeholder image
+            'prix' => $prix,
+            'prix_promotionnel' => $prix_promotionnel,
+            'quantite' => $this->faker->numberBetween(0, 100), // Quantité peut être 0
+            'statut' => $this->faker->randomElement(['disponible', 'brouillon', 'archivé', 'en_rupture_de_stock']),
+            'poids' => $this->faker->optional(0.7)->randomFloat(3, 0.1, 5), // 70% chance of having weight, between 0.1kg and 5kg
             'category_id' => Categorie::factory(),
             'fournisseur_id' => Fournisseur::factory(),
             'emplacement_id' => Emplacement::factory(),
