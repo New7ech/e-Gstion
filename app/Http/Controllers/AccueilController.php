@@ -2,153 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\Accueil;
-use App\Models\Article;
-use App\Models\Facture;
-use App\Models\Fournisseur;
-use Illuminate\Support\Facades\DB;
+use App\Models\Article; // Assurez-vous que ce modèle existe et correspond à vos produits
+use App\Models\Categorie; // Assurez-vous que ce modèle existe
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreAccueilRequest;
-use App\Http\Requests\UpdateAccueilRequest;
+// Les autres use non nécessaires pour cette méthode index ont été retirés pour la clarté
+// Si Accueil, Facture etc. sont utilisés par d'autres méthodes, ils peuvent rester.
 
 class AccueilController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource for the e-commerce homepage.
      */
-public function index()
-{
-    // Récupérer toutes les factures
-    $factures = Facture::all();
+    public function index()
+    {
+        // Récupérer, par exemple, les 4 premières catégories ou celles marquées comme "populaires"
+        // Si vous avez un champ 'est_populaire' (booléen) dans votre table catégories :
+        // $categories = Categorie::where('est_populaire', true)->take(4)->get();
+        // Sinon, prenons simplement les premières pour l'exemple :
+        $categories = Categorie::take(4)->get();
 
-    // Calculer le nombre total de factures
-    $nombreFactures = $factures->count();
+        // Récupérer, par exemple, les 8 produits/articles les plus récents ou "en vedette"
+        // Si vous avez un champ 'est_en_vedette' (booléen) :
+        // $produits = Article::where('est_en_vedette', true)->latest()->take(8)->get();
+        // Sinon, prenons les plus récents :
+        $produits = Article::latest()->take(8)->get(); // 'latest()' trie par 'created_at' DESC
 
-    // Calculer le montant total des factures
-    // $montantTotal = $factures->sum('montant_ttc');
-
-    // Calculer le montant total des factures par mois
-    $montantTotal = $factures->filter(function ($facture) {
-        $dateFacture = Carbon::parse($facture->date_facture);
-        return $dateFacture->year == now()->year && $dateFacture->month == now()->month;
-    })->sum('montant_ttc');
-
-    // Calculer le nombre de factures payées
-    $nombreFacturesPayees = $factures->where('statut_paiement', 'payé')->count();
-
-    // Calculer le nombre de factures impayées
-    $nombreFacturesImpayees = $factures->where('statut_paiement', 'impayé')->count();
-
-    // Calculer le montant total des factures impayées
-    $montantImpayes = $factures->where('statut_paiement', 'impayé')->sum('montant_ttc');
-
-    // Calculer le nombre de factures pour le mois courant
-    $nombreFacturesMoisCourant = $factures->filter(function ($facture) {
-        $dateFacture = Carbon::parse($facture->date_facture);
-        return $dateFacture->year == now()->year && $dateFacture->month == now()->month;
-    })->count();
-
-    // Calculer le montant total par mode de paiement
-    $montantCarte = $factures->where('mode_paiement', 'carte')->sum('montant_ttc');
-    $montantCheque = $factures->where('mode_paiement', 'chèque')->sum('montant_ttc');
-    $montantEspeces = $factures->where('mode_paiement', 'espèces')->sum('montant_ttc');
-
-    // Récupérer les factures impayées
-    $facturesImpayees = $factures->where('statut_paiement', 'impayé');
-
-    // Récupérer les factures récentes (par exemple, les 10 dernières)
-    $facturesRecentes = $factures->sortByDesc(function ($facture) {
-        return Carbon::parse($facture->date_facture);
-    })->take(10);
-
-    // Calculer les données pour le graphique d'évolution des impayés
-    $labels = [];
-    $data = [];
-    for ($i = 1; $i <= 12; $i++) {
-        $labels[] = date('M', mktime(0, 0, 0, $i, 1));
-        $data[] = $factures->filter(function ($facture) use ($i) {
-            $dateFacture = Carbon::parse($facture->date_facture);
-            return $dateFacture->month == $i && $facture->statut_paiement == 'impayé';
-        })->sum('montant_ttc');
+        // Passer les variables à la vue 'home.blade.php'
+        return view('home', compact(
+            'categories',
+            'produits'
+        ));
     }
-
-    // Passer les variables à la vue
-    return view('welcome', compact(
-        'nombreFactures',
-        'montantTotal',
-        'nombreFacturesPayees',
-        'nombreFacturesImpayees',
-        'montantImpayes',
-        'nombreFacturesMoisCourant',
-        'montantCarte',
-        'montantCheque',
-        'montantEspeces',
-        'facturesImpayees',
-        'facturesRecentes',
-        'labels',
-        'data'
-    ));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        //
+        // Logique pour la création si nécessaire pour l'administration de Accueil
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAccueilRequest $request)
+    public function store(/*StoreAccueilRequest $request*/) // Type-hinting commenté si non utilisé
     {
-        //
+        // Logique de stockage si nécessaire
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Accueil $accueil)
+    public function show(/*Accueil $accueil*/) // Type-hinting commenté si non utilisé
     {
-        //
+        // Logique d'affichage d'un 'Accueil' spécifique si pertinent
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Accueil $accueil)
+    public function edit(/*Accueil $accueil*/) // Type-hinting commenté si non utilisé
     {
-        //
+        // Logique d'édition
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateAccueilRequest $request, Accueil $accueil)
+    public function update(/*UpdateAccueilRequest $request, Accueil $accueil*/) // Type-hinting commenté si non utilisé
     {
-        //
+        // Logique de mise à jour
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Accueil $accueil)
+    public function destroy(/*Accueil $accueil*/) // Type-hinting commenté si non utilisé
     {
-        //
+        // Logique de suppression
     }
 }
