@@ -222,42 +222,50 @@
           @endphp
         --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          {{-- Boucle @foreach pour afficher les catégories dynamiques --}}
+          @forelse($categories as $categorie)
           @php
-            // Simuler des données dynamiques pour les catégories
-            $placeholderCategories = [
-              (object)['nom' => 'Smartphones & Tablettes', 'image_url' => 'https://via.placeholder.com/400x300/E0E7FF/4F46E5?text=Électronique', 'url' => '#', 'nombre_produits' => 120],
-              (object)['nom' => 'Robes & Jupes', 'image_url' => 'https://via.placeholder.com/400x300/FCE7F3/DB2777?text=Mode+Femme', 'url' => '#', 'nombre_produits' => 85],
-              (object)['nom' => 'Mobilier de Salon', 'image_url' => 'https://via.placeholder.com/400x300/FEF3C7/D97706?text=Maison', 'url' => '#', 'nombre_produits' => 200],
-              (object)['nom' => 'Équipement de Fitness', 'image_url' => 'https://via.placeholder.com/400x300/D1FAE5/059669?text=Sport', 'url' => '#', 'nombre_produits' => 150],
-            ];
+            // Logique pour l'URL de l'image de la catégorie
+            $imageUrl = $categorie->image_url ?? $categorie->image; // Priorité à image_url, sinon champ 'image'
+            if (Str::startsWith($imageUrl, 'http')) {
+                $categoryDisplayImageUrl = $imageUrl;
+            } elseif ($imageUrl) {
+                $categoryDisplayImageUrl = Storage::url($imageUrl);
+            } else {
+                $categoryDisplayImageUrl = 'https://via.placeholder.com/400x300/E0E7FF/4F46E5?text=' . urlencode($categorie->nom_categorie ?? 'Catégorie');
+            }
           @endphp
-
-          {{-- Boucle @foreach pour afficher les catégories --}}
-          @foreach($placeholderCategories as $categorie)
-          <a href="{{ $categorie->url }}" class="group block rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out bg-gray-50 dark:bg-gray-800">
+          <a href="{{ route('categories.show', $categorie->id_categorie) }}" class="group block rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out bg-gray-50 dark:bg-gray-800">
             <div class="relative aspect-w-4 aspect-h-3">
               {{-- Image de la catégorie --}}
-              <img src="{{ $categorie->image_url }}" alt="Image de la catégorie {{ $categorie->nom }}" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300">
+              <img src="{{ $categoryDisplayImageUrl }}" alt="Image de la catégorie {{ $categorie->nom_categorie }}" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300">
               {{-- Superposition optionnelle pour le texte --}}
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             </div>
             <div class="p-4 md:p-5">
               {{-- Nom de la catégorie --}}
               <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300">
-                {{ $categorie->nom }}
+                {{ $categorie->nom_categorie }}
               </h3>
               {{-- Nombre de produits dans la catégorie (optionnel) --}}
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ $categorie->nombre_produits ?? 'Plusieurs' }} articles
-              </p>
+              {{-- Supposons une relation 'articles' dans le modèle Categorie pour compter --}}
+              @if($categorie->relationLoaded('articles') && $categorie->articles)
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ $categorie->articles->count() }} article{{ $categorie->articles->count() > 1 ? 's' : '' }}
+                </p>
+              @else
+                {{-- <p class="text-sm text-gray-500 dark:text-gray-400">Découvrir</p> --}}
+              @endif
             </div>
           </a>
-          @endforeach
+          @empty
+            <p class="col-span-full text-center text-gray-500">Aucune catégorie à afficher pour le moment.</p>
+          @endforelse
         </div>
 
         {{-- Bouton pour voir toutes les catégories (optionnel) --}}
         <div class="text-center mt-10 md:mt-12">
-          <a href="#" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150 ease-in-out">
+          <a href="{{ route('categories.index') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150 ease-in-out">
             Toutes les catégories
           </a>
         </div>
@@ -278,70 +286,37 @@
 
         {{-- Grille des produits --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+          {{-- Boucle @foreach pour afficher les produits dynamiques --}}
+          {{-- Le modèle Article a des champs comme: nom_article, description, prix_vente, quantite_stock, image, id_categorie, id_fournisseur --}}
+          @forelse($produits as $produit)
           @php
-            // Simuler des données dynamiques pour les produits en vedette
-            $placeholderProduits = [
-              (object)[
-                'nom' => 'Super Casque Audio Pro',
-                'image_url' => 'https://via.placeholder.com/300x300/EBF4FF/1D4ED8?text=Casque+Audio',
-                'url' => '#',
-                'prix' => '149,99 €',
-                'ancien_prix' => '199,99 €', // Optionnel
-                'reduction_badge' => '-25%', // Optionnel
-                'nouveau_badge' => true, // Optionnel
-                'evaluation' => 4.5, // Optionnel: note sur 5
-                'nombre_avis' => 120, // Optionnel
-              ],
-              (object)[
-                'nom' => 'Montre Connectée Élégante',
-                'image_url' => 'https://via.placeholder.com/300x300/FEE2E2/B91C1C?text=Montre',
-                'url' => '#',
-                'prix' => '249,00 €',
-                'nouveau_badge' => false,
-                'evaluation' => 5,
-                'nombre_avis' => 95,
-              ],
-              (object)[
-                'nom' => 'Cafetière Express Haute Performance',
-                'image_url' => 'https://via.placeholder.com/300x300/FEF9C3/713F12?text=Cafetière',
-                'url' => '#',
-                'prix' => '89,50 €',
-                'reduction_badge' => 'Promo!',
-                'evaluation' => 4,
-                'nombre_avis' => 210,
-              ],
-              (object)[
-                'nom' => 'Baskets de Course Ultra Légères',
-                'image_url' => 'https://via.placeholder.com/300x300/E0F2FE/0891B2?text=Baskets',
-                'url' => '#',
-                'prix' => '119,90 €',
-                'ancien_prix' => '150,00 €',
-                'nouveau_badge' => true,
-                'evaluation' => 4.8,
-                'nombre_avis' => 77,
-              ],
-            ];
+            // Logique pour l'URL de l'image du produit
+            $imageUrl = $produit->image_url ?? $produit->image; // Priorité à image_url, sinon champ 'image'
+            if (Str::startsWith($imageUrl, 'http')) {
+                $productDisplayImageUrl = $imageUrl;
+            } elseif ($imageUrl) {
+                $productDisplayImageUrl = Storage::url($imageUrl);
+            } else {
+                $productDisplayImageUrl = 'https://via.placeholder.com/300x300/EBF4FF/1D4ED8?text=' . urlencode($produit->nom_article ?? 'Produit');
+            }
           @endphp
-
-          {{-- Boucle @foreach pour afficher les produits --}}
-          {{-- Ceci pourrait être un @component('components.ecommerce.product-card', ['product' => $produit]) --}}
-          @foreach($placeholderProduits as $produit)
           <div class="group bg-white dark:bg-gray-900 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col">
             <div class="relative">
               {{-- Image du produit --}}
-              <a href="{{ $produit->url }}" class="block aspect-w-1 aspect-h-1">
-                <img src="{{ $produit->image_url }}" alt="Image de {{ $produit->nom }}" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300">
+              <a href="{{ route('articles.show', $produit->id_article) }}" class="block aspect-w-1 aspect-h-1">
+                <img src="{{ $productDisplayImageUrl }}" alt="Image de {{ $produit->nom_article }}" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300">
               </a>
-              {{-- Badges (Réduction, Nouveau) --}}
+              {{-- Badges (Réduction, Nouveau) - Logique à ajouter si ces champs existent sur le modèle Article --}}
               <div class="absolute top-3 left-3 flex flex-col space-y-1">
-                @if(isset($produit->reduction_badge) && $produit->reduction_badge)
-                  <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">{{ $produit->reduction_badge }}</span>
+                {{-- @if($produit->est_en_promotion && $produit->pourcentage_reduction)
+                  <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">-{{ $produit->pourcentage_reduction }}%</span>
                 @endif
-                @if(isset($produit->nouveau_badge) && $produit->nouveau_badge)
+                @if($produit->est_nouveau)
                   <span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">Nouveau</span>
-                @endif
+                @endif --}}
               </div>
               {{-- Actions rapides (optionnel, ex: ajout rapide au panier, wishlist) --}}
+              {{-- Ces boutons nécessiteront du JS et des routes/contrôleurs pour fonctionner --}}
               <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
                 <button title="Ajouter au panier" class="bg-white text-gray-700 hover:bg-indigo-500 hover:text-white p-2 rounded-full shadow-md transition-colors duration-200">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -355,43 +330,46 @@
             <div class="p-4 md:p-5 flex flex-col flex-grow">
               {{-- Nom du produit --}}
               <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-1 flex-grow">
-                <a href="{{ $produit->url }}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300">
-                  {{ $produit->nom }}
+                <a href="{{ route('articles.show', $produit->id_article) }}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300">
+                  {{ $produit->nom_article }}
                 </a>
               </h3>
 
-              {{-- Évaluation (étoiles) --}}
-              @if(isset($produit->evaluation) && $produit->evaluation > 0)
+              {{-- Évaluation (étoiles) - Logique à ajouter si système d'évaluation existe --}}
+              {{-- @if(isset($produit->evaluation_moyenne) && $produit->evaluation_moyenne > 0)
               <div class="flex items-center my-1">
                 @for ($i = 1; $i <= 5; $i++)
-                  <svg class="w-4 h-4 {{ $i <= $produit->evaluation ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                  <svg class="w-4 h-4 {{ $i <= $produit->evaluation_moyenne ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                 @endfor
                 @if(isset($produit->nombre_avis))
                   <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">({{ $produit->nombre_avis }} avis)</span>
                 @endif
               </div>
-              @endif
+              @endif --}}
 
               {{-- Prix --}}
               <div class="mt-auto pt-2">
-                <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ $produit->prix }}</span>
-                @if(isset($produit->ancien_prix) && $produit->ancien_prix)
-                  <span class="ml-2 text-sm text-gray-500 line-through dark:text-gray-400">{{ $produit->ancien_prix }}</span>
-                @endif
+                <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ number_format($produit->prix_vente, 2, ',', ' ') }} €</span>
+                {{-- @if($produit->ancien_prix && $produit->ancien_prix > $produit->prix_vente)
+                  <span class="ml-2 text-sm text-gray-500 line-through dark:text-gray-400">{{ number_format($produit->ancien_prix, 2, ',', ' ') }} €</span>
+                @endif --}}
               </div>
 
               {{-- Bouton Ajouter au panier (visible en permanence ou au survol selon design) --}}
+              {{-- Ce bouton nécessitera du JS et une route/contrôleur pour fonctionner --}}
               <button class="mt-3 w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
                 Ajouter au panier
               </button>
             </div>
           </div>
-          @endforeach
+          @empty
+            <p class="col-span-full text-center text-gray-500">Aucun produit à afficher pour le moment.</p>
+          @endforelse
         </div>
 
         {{-- Bouton pour voir tous les produits (optionnel) --}}
         <div class="text-center mt-10 md:mt-12">
-          <a href="#" class="inline-block bg-transparent hover:bg-indigo-50 dark:hover:bg-gray-700 text-indigo-600 dark:text-indigo-400 font-medium py-3 px-6 rounded-lg border border-indigo-600 dark:border-indigo-400 hover:border-transparent transition-all duration-150 ease-in-out">
+          <a href="{{ route('articles.index') }}" class="inline-block bg-transparent hover:bg-indigo-50 dark:hover:bg-gray-700 text-indigo-600 dark:text-indigo-400 font-medium py-3 px-6 rounded-lg border border-indigo-600 dark:border-indigo-400 hover:border-transparent transition-all duration-150 ease-in-out">
             Voir tous nos produits
           </a>
         </div>
