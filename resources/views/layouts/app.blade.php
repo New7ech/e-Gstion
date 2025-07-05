@@ -40,8 +40,10 @@
     <!-- CSS Just for demo purpose, dont include it in your project -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
+    <!-- Vite Assets -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-
+    @stack('styles') {{-- Déplacé ici pour que les styles poussés puissent surcharger Vite si besoin, ou être chargés après --}}
   </head>
   <body>
     <div class="wrapper">
