@@ -1,5 +1,13 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Les directives @source et @theme peuvent être conservées si elles sont utilisées par un autre outil, */
+/* mais elles ne sont pas standard pour Tailwind CSS. Pour l'instant, je vais les commenter */
+/* au cas où elles seraient spécifiques à une configuration particulière de ce projet. */
+/* Si elles ne sont pas nécessaires, elles pourront être supprimées ultérieurement. */
+
+/*
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -9,3 +17,4 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+*/
